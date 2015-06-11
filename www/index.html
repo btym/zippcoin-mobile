@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html ng-app="App">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title>zippcoin</title>
+
+    <link href="lib/ionic/css/ionic.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+    <!-- ionic/angularjs js -->
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
+
+    <script src="lib/ngCordova/dist/ng-cordova.js"></script>
+    <!-- cordova script (this will be a 404 during development) -->
+    <script src="cordova.js"></script>
+
+    <script src="js/app.js"></script>
+</head>
+
+<body ng-controller="AppCtrl">
+
+    <ion-nav-bar align-title="center" class="bar-stable">
+        <ion-nav-back-button ng-click="back()">
+        </ion-nav-back-button>
+        <ion-nav-buttons side="right">
+            <button ng-click="toggleMenu()" class="button button-icon icon ion-navicon" ng-show="userdata"></button>
+        </ion-nav-buttons>
+    </ion-nav-bar>
+
+    <!--login-->
+
+    <ion-content><div class="screen">
+        <div class="list list-inset" id="logindiv" style="display: none" ng-show="!userdata && !login_loading">
+            <label class="item item-input">
+                <input type="text" id="email" placeholder="email">
+            </label>
+            <label class="item item-input">
+                <input type="password" id="pwd" placeholder="password">
+            </label>
+            <div>
+                <button class="button button-block button-orange" ng-click="login()">
+                    Login
+                </button>
+            </div>
+        </div>
+        <ion-spinner ng-show="login_loading" icon="android"></ion-spinner>
+    </div></ion-content>
+
+    <!--sidemenu-->
+
+    <ion-side-menus ng-show="userdata">
+        <!-- Center content -->
+        <ion-side-menu-content>
+            <ion-nav-view></ion-nav-view>
+        </ion-side-menu-content>
+
+        <!-- right menu -->
+        <ion-side-menu side="right">
+            <ion-content>
+                <ion-list>
+                    <ion-item nav-clear menu-close href="#/home" ng-click="rsh()">
+                        Home
+                    </ion-item>
+                    <ion-item nav-clear menu-close href="#/search" ng-click="rsh()">
+                        Search Users
+                    </ion-item>
+                    <ion-item nav-clear menu-close ng-click="rsh(); logout()" href="#/home">
+                        Log Out
+                    </ion-item>
+                </ion-list>
+            </ion-content>
+        </ion-side-menu>
+    </ion-side-menus>
+
+    <!--home-->
+
+    <script id="home.html" type="text/ng-template">
+        <ion-view view-title="Home">
+
+            <ion-content><div class="screen">
+                <div class="list card">
+                    <div class="item item-avatar">
+                        <img ng-src="{{ userdata.userDetails.user.facebookLargePicture }}" err-src>
+                        <h2>{{ userdata.userDetails.user.friendlyName }}</h2>
+                        <p>{{ description(userdata.userDetails.user) }}</p>
+                    </div>
+                    <div class="item item-body">
+                        <font class="halfwidth">Balance: {{ userdata.account.balance }}</font> <a class="send-link halfwidth" href="#/send" ng-click="forward()">Send ZPC <i class="icon ion-forward"></i></a>
+                    </div>
+                </div>
+
+                <h2 class="txn-history-title">Transaction History<span class="refresher-span"><i class="icon ion-android-refresh refresher-icon" ng-click="refresh()"></span></i></h2>
+
+                <ion-spinner ng-show="txns_loading" icon="android"></ion-spinner>
+                <div class="list card" ng-show="!txns_loading">
+                    <a class="item item-body txn-item" ng-repeat="txn in userdata.txns" ng-click="forward()" ng-href="#/txn/{{ txn.id }}">
+                        <font class="txndate">{{ unixToHuman(txn.time, 'short') }}</font>
+                        <font class="txndesc">You {{ txn.amount > 0 ? "received" : "sent" }} {{ Math.abs(txn.amount) }} ZPC</font>
+                        <i class="icon ion-ios-arrow-right" style="float: right;"></i>
+                    </a>
+                </div>
+
+            </div></ion-content>
+
+        </ion-view>
+    </script>
+
+    <!--user search-->
+
+    <script id="search.html" type="text/ng-template">
+        <ion-view view-title="Search" ng-controller="FindCtrl">
+            <ion-content><div class="screen">
+
+                <div class="list card">
+                    <div class="item item-button-right trans-search-button">
+                        <div class="item item-input">
+                            <input type="text" id="search_field" placeholder="Enter an email, name, or username">
+                            <button ng-click="findUser()" class="button button-stable">
+                                <i class="icon ion-android-search"></i>
+                            </button>
+                            <button class="button button-stable" ng-click="randomUsers()" style="margin-left: 4px; margin-right: 1px;">
+                                <i class="icon ion-ios-shuffle-strong"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <ion-spinner ng-show="search_loading" icon="android"></ion-spinner>
+
+                <div ng-show="error && !search_loading">
+                    <div class="error-box-outer">
+                        <div class="error-box-inner">
+                            <i class="icon ion-android-warning"></i>
+                            <br> {{ error }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="list card" ng-show="results && !search_loading">
+                    <a class="item item-avatar user-card" ng-click="forward()" href="#/userdetails/{{ results.userDetails.user.accountNo }}">
+                        <img ng-src="{{ results.userDetails.user.defaultLargePicture }}" err-src>
+                        <h2>{{ results.userDetails.user.friendlyName }}</h2>
+                        <p>{{ description(results.userDetails.user) }}</p>
+                        <i class="icon ion-ios-arrow-right user-arrow" style="float: right;"></i>
+                    </a>
+                    <div class="item item-body">
+                        <font class="halfwidth">Balance: {{ results.account.balance }}</font> <a class="send-link halfwidth" href="#/send/{{ userObj.user.accountNo }}" ng-click="forward()">Send ZPC <i class="icon ion-forward"></i></a>
+                    </div>
+                </div>
+
+                <div class="list card" ng-show="resultsRandom && !search_loading" ng-repeat="userObj in resultsRandom.randomUsers">
+                    <a class="item item-avatar user-card" ng-click="forward()" href="#/userdetails/{{ userObj.user.accountNo }}">
+                        <img ng-src="{{ userObj.user.defaultLargePicture }}" err-src>
+                        <h2>{{ userObj.user.friendlyName }}</h2>
+                        <p>{{ description(user) }}</p>
+                        <i class="icon ion-ios-arrow-right user-arrow" style="float: right;"></i>
+                    </a>
+                </div>
+
+            </div></ion-content>
+        </ion-view>
+    </script>
+
+    <!--send-->
+
+    <script id="send.html" type="text/ng-template">
+        <ion-view view-title="Send" ng-controller="SendCtrl">
+            <ion-content><div class="screen">
+
+                <ion-spinner ng-show="send_loading" icon="android"></ion-spinner>
+
+                <div class="list card" ng-show="!send_loading && send_result == -1">
+
+                    <label class="item item-input" ng-show="!id">
+                        <input type="text" id="send_email" placeholder="Recipient's Email">
+                    </label>
+                    <div class="item item-body send-specific-email" ng-show="name">
+                        {{ name }}
+                    </div>
+                    <label class="item item-input">
+                        <input type="text" id="send_amount" placeholder="Amount">
+                    </label>
+                    <label class="item item-input">
+                        <input type="text" id="send_memo" placeholder="Memo">
+                    </label>
+
+                    <button class="button button-full button-stable item sendbutton" ng-click="send()">OK</button>
+                </div>
+
+                <div ng-show="send_result == 1">
+
+                    <div class="success-box-outer">
+                        <div class="error-box-inner">
+                            <i class="icon ion-android-done"></i>
+                            <br> You sent {{ Math.abs(tx.amount) }} ZPC to {{ (((tx.otherUser.emailName || tx.otherUser.fbName) || tx.otherUser.twName) || otherUser.email) || otherUser.twScreenName }}
+                        </div>
+                    </div>
+
+                </div>
+                <div ng-show="send_result == 0">
+
+                    <div class="error-box-outer">
+                        <div class="error-box-inner">
+                            <i class="icon ion-android-warning"></i>
+                            <br> {{ error }}
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <button ng-click="errorOk()" class="button button-stable button-dialog">
+                            Back
+                        </button>
+                    </div>
+
+
+                </div>
+            </div></ion-content>
+        </ion-view>
+    </script>
+
+    <!--user details-->
+
+    <script id="userdetails.html" type="text/ng-template">
+        <ion-view view-title="User Details" ng-controller="UserCtrl">
+
+            <ion-content><div class="screen">
+
+                <ion-spinner ng-show="!results" icon="android"></ion-spinner>
+
+                <div ng-show="results">
+                    <div class="list card">
+                        <div class="item item-avatar">
+                            <img ng-src="{{ results.userDetails.user.facebookLargePicture }}" err-src>
+                            <h2>{{ results.userDetails.user.friendlyName }}</h2>
+                            <p>{{ description(results.userDetails.user) }}</p>
+                        </div>
+                        <div class="item item-body">
+                            <font class="halfwidth">Balance: {{ results.account.balance }}</font> <a class="send-link halfwidth" href="#/send/{{results.account.accountNo}}/{{results.userDetails.user.friendlyName}}" ng-click="forward()">Send ZPC <i class="icon ion-forward"></i></a>
+                        </div>
+                    </div>
+
+                    <h2 class="txn-history-title">Transaction History</h2>
+                    <div class="list card">
+                        <a class="item item-body txn-item" ng-repeat="txn in results.txns" ng-click="forward()" ng-href="#/txn/{{ txn.id }}">
+                            <font class="txndate">{{ unixToHuman(txn.time, 'short') }}</font> {{ txn.amount > 0 ? "Received" : "Sent" }} {{ Math.abs(txn.amount) }} ZPC
+                        </a>
+                    </div>
+                </div>
+
+
+
+            </div></ion-content>
+
+        </ion-view>
+    </script>
+
+    <!--transaction-->
+
+    <script id="txn.html" type="text/ng-template">
+        <ion-view view-title="Transaction Details" ng-controller="TxnCtrl">
+            <ion-content><div class="screen">
+                <ion-spinner ng-show="!txnDetails && error == -1" icon="android"></ion-spinner>
+            </div></ion-content>
+            <ion-content ng-show="error != -1"><div class="screen">
+                <div class="error-box-outer">
+                    <div class="error-box-inner">
+                        <i class="icon ion-android-warning"></i>
+                        <br> The server returned error code {{ error }}. Please try again.
+                    </div>
+                </div>
+            </div></ion-content>
+            <ion-content ng-show="txnDetails"><div class="screen">
+                <h2 style="margin-top: 10px;" class="txn-history-title">{{ txnDetails.tx.systemPayment ? "System Payment" : (txnDetails.tx.amount > 0 ? "Sender" : "Recipient") }}</h2>
+
+                <div class="list card" ng-show="!txnDetails.tx.systemPayment">
+                    <a class="item item-avatar user-card" ng-click="forward()" href="#/userdetails/{{ txnDetails.otherUserDetails.user.accountNo }}">
+                        <img ng-src="{{ txnDetails.otherUserDetails.user.facebookLargePicture }}" err-src>
+                        <h2>{{ txnDetails.otherUserDetails.user.friendlyName }}</h2>
+                        <p>{{ (txnDetails.tx.otherUser.email != null && txnDetails.tx.otherUser.email != "[private]") ? txnDetails.tx.otherUser.email : description(txnDetails.otherUserDetails.user) }}</p>
+                        <i class="icon ion-ios-arrow-right user-arrow" style="float: right;"></i>
+                    </a>
+                </div>
+
+                <div class="list card">
+                    <div class="item">
+                        <font class="txndate">DATE</font> {{ unixToHuman(txnDetails.tx.time, 'long') }}
+                    </div>
+                    <div class="item">
+                        <font class="txndate">AMOUNT</font> {{ Math.abs(txnDetails.tx.amount) }}
+                    </div>
+                    <div class="item item-body" ng-show="txnDetails.tx.memo">
+                        <font class="txndate memo-label">MEMO</font> <font class="memo">{{ txnDetails.tx.memo }}</font>
+                    </div>
+                </div>
+            </div></ion-content>
+        </ion-view>
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,162 @@
+@media screen and (orientation: landscape) {
+    .screen {
+        width: 60% !important;
+        margin: 0 auto !important;
+    }
+}
+
+.back-text {
+    display: none !important;
+}
+
+.popup-body {
+    overflow: hidden !important;
+}
+
+.button-dialog {
+    min-height: 10px !important;
+    line-height: 30px !important;
+    margin-top: 10px !important;
+}
+
+.refresher-span {
+    float: right !important;
+    margin-right: 15px !important;
+    margin-left: -15px !important;
+    margin-top: -0.2em !important;
+    font-size: 20pt !important;
+}
+
+.refresher-icon {
+    right: 10px;
+    padding-left: 20px;
+    padding-bottom: 10px;
+}
+
+.user-arrow {
+    float: right;
+    position: absolute;
+    right: 1em;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.user-card:hover {
+    background-color: #ededed;
+    cursor: pointer;
+}
+
+.error-box-outer {
+    text-align: center;
+    margin-top: 5em;
+    background-color: rgb(255, 230, 230);
+    margin-left: 10%;
+    margin-right: 10%;
+    border-radius: 5px;
+    border: 1px solid rgb(142, 0, 0);
+}
+
+.success-box-outer {
+    text-align: center;
+    margin-top: 5em;
+    background-color: rgb(230, 255, 230);
+    margin-left: 10%;
+    margin-right: 10%;
+    border-radius: 5px;
+    border: 1px solid rgb(0, 142, 0);
+}
+
+.trans-search-button {
+    padding: 0;
+    padding-right: 4px;
+}
+
+.error-box-inner {
+    padding: 4%;
+}
+
+.memo-label {
+    position: fixed;
+}
+
+.memo {
+    padding-left: calc(25% + 5px);
+    display: inline-block;
+}
+
+.bar-stable {
+    background-color: #2cafd6 !important;
+}
+
+ion-spinner>svg {
+    margin: 40% auto;
+    width: 100% !important;
+}
+
+.txn-item:hover {
+    background-color: #ededed;
+}
+
+.txn-history-title {
+    font-size: 12pt;
+    text-align: center;
+    color: lightgray;
+}
+
+.txndate {
+    color: lightgray !important;
+    width: 25%;
+    display: inline-block;
+}
+
+.txndesc {
+    text-align: center;
+    width: 48%;
+    position: absolute;
+}
+
+.graylabel {
+    color: lightgray !important;
+    display: inline-block;
+}
+
+.ion-navicon {
+    color: white !important;
+}
+
+.title,
+.back-button {
+    color: white !important;
+}
+
+.button-orange {
+    background-color: #2cafd6;
+    color: white !important;
+}
+
+.halfwidth {
+    width: 49%;
+    display: inline-block;
+    text-align: center;
+}
+
+a.send-link {
+    color: #444 !important;
+    text-decoration: none;
+}
+
+.sendbutton {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    top: 1px;
+}
+
+.send-specific-email {
+    color: #777;
+    text-align: center;
+}
+
+.nopadding {
+    padding: 0;
+}
