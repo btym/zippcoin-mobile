@@ -14,7 +14,6 @@ function UserCtrl($scope, $stateParams, zippcoin) {
 App.controller("TxnCtrl", ["$scope", "$stateParams", "zippcoin", TxnCtrl]);
 
 function TxnCtrl($scope, $stateParams, zippcoin) {
-    $scope.error = -1;
     console.log($stateParams.id);
     setTimeout(function () {
         zippcoin.transactionDetails($scope, $stateParams.id)
@@ -41,7 +40,7 @@ function SendCtrl($scope, $stateParams, $q, zippcoin) {
     $scope.errorOk = function () {
         $scope.send_result = -1;
     }
-    
+
     if ($stateParams.id) {
         $scope.id = $stateParams.id;
         $scope.name = $stateParams.name;
@@ -156,7 +155,7 @@ function zippcoin($http, $log) {
 
     this.transactionDetails = function ($scope, id) {
         $http.get(this.baseUrl + "/api/tx/" + id).success(function (data) {
-                $scope.error = -1;
+                $scope.error = null;
                 console.log(data);
                 $scope.txnDetails = data;
             })
@@ -259,6 +258,8 @@ App.config(function ($stateProvider, $urlRouterProvider) {
 
 App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush, $ionicPopup, $ionicHistory, $http) {
 
+    window.push = $cordovaPush;
+
     $rootScope.baseUrl = "https://wallet.zippcoin.com";
 
     $rootScope.back = function () {
@@ -356,6 +357,7 @@ App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush
 
         $cordovaPush.register(config).then(function (result) { //this is only called when registering APN
             if (ionic.Platform.isIOS()) {
+                window.data = result;
                 regid = "apn-" + result;
                 console.log(regid);
                 window.localStorage.regid = regid;
@@ -381,41 +383,40 @@ App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush
                     console.log("failed to unregister push");
                 });
             }
-            switch (notification.event) {
-            case 'registered':
-                if (notification.regid.length > 0) {
-                    window.localStorage.regid = notification.regid;
-                    $http.get($rootScope.baseUrl + "/api/user/addRegistrationId?id=" + notification.regid).success(function (data) {
-                        console.log("registered id with zippcoin: " + notification.regid);
-                    });
+            
+            if (ionic.Platform.isIOS())
+                showAlert(notification.alert, notification.memo, notification.txnid);
+            else if (ionic.Platform.isAndroid())
+                switch (notification.event) {
+                case 'registered':
+                    if (notification.regid.length > 0) {
+                        window.localStorage.regid = notification.regid;
+                        $http.get($rootScope.baseUrl + "/api/user/addRegistrationId?id=" + notification.regid).success(function (data) {
+                            console.log("registered id with zippcoin: " + notification.regid);
+                        });
+                    }
+                    break;
+
+                case 'message':
+                    if (ionic.Platform.isAndroid())
+                        showAlert(notification.payload.message, notification.payload.memo, notification.payload.txnid);
+                    else if (ionic.Platform.isIOS())
+                        showAlert(notification.aps.alert.title, notification.aps.alert.body, notification.txnid);
+                    break;
+
+                default:
+                    alert('push error: ' + notification);
+                    break;
                 }
-                break;
-
-            case 'message':
-                if (ionic.Platform.isAndroid())
-                    showAlert(notification.payload.message, notification.payload.memo, notification.payload.txnid);
-                else if (ionic.Platform.isIOS())
-                    showAlert(notification.aps.alert.title, notification.aps.alert.body, notification.txnid);
-                console.log(notification);
-                break;
-
-            case 'error':
-                alert('push error = ' + notification.msg);
-                break;
-
-            default:
-                alert('An unknown push event has occurred');
-                break;
-            }
         });
 
         //--------------------------------------------
-        
+
         if (window.cordova && window.cordova.plugins.Keyboard) {
             cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
         }
         if (window.StatusBar) {
-            StatusBar.styleDefault();
+            StatusBar.styleLightContent();
         }
     });
 })

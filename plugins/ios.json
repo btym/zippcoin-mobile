@@ -27,6 +27,18 @@
                         {
                             "xml": "<feature name=\"Contacts\"><param name=\"ios-package\" value=\"CDVContacts\" /></feature>",
                             "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"StatusBar\"><param name=\"ios-package\" value=\"CDVStatusBar\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<preference name=\"StatusBarOverlaysWebView\" value=\"true\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<preference name=\"StatusBarStyle\" value=\"lightcontent\" />",
+                            "count": 1
                         }
                     ]
                 }
@@ -69,6 +81,9 @@
             "PACKAGE_NAME": "com.ionicframework.zippcoin404463"
         },
         "org.apache.cordova.contacts": {
+            "PACKAGE_NAME": "com.zippcoin"
+        },
+        "org.apache.cordova.statusbar": {
             "PACKAGE_NAME": "com.zippcoin"
         }
     },

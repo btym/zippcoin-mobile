@@ -1,3 +1,7 @@
+[ng\:cloak], [ng-cloak], .ng-cloak {
+    display: none;
+}
+
 @media screen and (orientation: landscape) {
     .screen {
         width: 60% !important;
@@ -93,7 +97,7 @@ ion-spinner>svg {
     width: 100% !important;
 }
 
-.txn-item:hover {
+.txn-item:active {
     background-color: #ededed;
 }
 
