@@ -401,7 +401,7 @@ App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush
                     if (ionic.Platform.isAndroid())
                         showAlert(notification.payload.message, notification.payload.memo, notification.payload.txnid);
                     else if (ionic.Platform.isIOS())
-                        showAlert(notification.aps.alert.title, notification.aps.alert.body, notification.txnid);
+                        showAlert(notification.aps.alert.title, notification.aps.alert.body, notification.aps.txnId);
                     break;
 
                 default:
