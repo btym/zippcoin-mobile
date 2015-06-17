@@ -94,10 +94,13 @@ function AppCtrl($scope, $log, $rootScope, $ionicHistory, $ionicSideMenuDelegate
         $scope.login_loading = true;
         var email = document.getElementById("email").value;
         zippcoin.setAuthHeader("Basic " + btoa(email + ":" + document.getElementById("pwd").value));
-        zippcoin.user($scope, email);
-        window.localStorage.email = email;
-        document.getElementById("email").value = "";
-        document.getElementById("pwd").value = "";
+        if (zippcoin.user($scope, email)) {
+            window.localStorage.email = email;
+            document.getElementById("email").value = "";
+            document.getElementById("pwd").value = "";
+        } else {
+            $scope.logout();   
+        }
     }
 
     $scope.logout = function () {
@@ -106,6 +109,7 @@ function AppCtrl($scope, $log, $rootScope, $ionicHistory, $ionicSideMenuDelegate
         document.getElementById("logindiv").setAttribute("style", null);
         $scope.userdata = null;
         window.localStorage.accountNo = null;
+        $cordovaPush.unregister(null);
     }
 
     if (window.localStorage.auth && window.localStorage.email) {
@@ -217,7 +221,11 @@ function zippcoin($http, $log) {
                 console.log(data);
                 $scope.txns_loading = false;
                 $scope.login_loading = false;
+                return true;
             });
+        })
+        .error(function (data) {
+          return false;
         });
     }
 }
@@ -257,8 +265,6 @@ App.config(function ($stateProvider, $urlRouterProvider) {
 });
 
 App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush, $ionicPopup, $ionicHistory, $http) {
-
-    window.push = $cordovaPush;
 
     $rootScope.baseUrl = "https://wallet.zippcoin.com";
 
@@ -321,21 +327,37 @@ App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush
 
         //-------------- push notifications ---------
 
-        var config = null;
+        $rootScope.register = function () {
+            var config = null;
+            if (ionic.Platform.isAndroid()) {
+                config = {
+                    "senderID": "553002996151",
+                }
+            } else if (ionic.Platform.isIOS()) {
+                config = {
+                    "sound": "true",
+                    "alert": "true"
+                }
+            }
+            $cordovaPush.register(config).then(function (result) { //this is only called when registering APN
+                if (ionic.Platform.isIOS()) {
+                    regid = "apn-" + result;
+                    window.localStorage.regid = regid;
+                    $http.get($rootScope.baseUrl + "/api/user/addRegistrationId?id=" + regid).success(function (data) {
+                        console.log("registered id with zippcoin: " + regid);
+                    });
 
-        if (ionic.Platform.isAndroid()) {
-            config = {
-                "senderID": "553002996151",
-            }
-        } else if (ionic.Platform.isIOS()) { //TODO: implement ios notifications
-            config = {
-                "sound": "true",
-                "alert": "true"
-            }
+                }
+                console.log("successfully registered push");
+            }, function (err) {
+                console.log("failed to register push");
+            })
         }
 
+        $rootScope.register();
+
         showAlert = function (message, memo, txnid) {
-            var templatehtml = message + (memo != null ? ": <br><font style='font-style: italic'>" + memo + "</font>" : "");
+            var templatehtml = message + (typeof memo != "undefined" && memo != "" ? ": <br><font style='font-style: italic'>" + memo + "</font>" : "");
             $ionicPopup.show({
                 title: 'You received zippcoin',
                 template: templatehtml,
@@ -355,37 +377,19 @@ App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush
             });
         };
 
-        $cordovaPush.register(config).then(function (result) { //this is only called when registering APN
-            if (ionic.Platform.isIOS()) {
-                window.data = result;
-                regid = "apn-" + result;
-                console.log(regid);
-                window.localStorage.regid = regid;
-                $http.get($rootScope.baseUrl + "/api/user/addRegistrationId?id=" + regid).success(function (data) {
-                    console.log("registered id with zippcoin: " + regid);
-                });
-
-            }
-            console.log("successfully registered push");
-        }, function (err) {
-            console.log("failed to register push");
-        })
-
         $rootScope.$on('$cordovaPush:notificationReceived', function (event, notification) {
             if (!window.localStorage.auth) {
                 $http.get($rootScope.baseUrl + "/api/user/removeRegistrationId?id=" + window.localStorage.regid).success(
                     function (data) {
                         console.log("unregistered id with zippcoin");
                     });
-                $cordovaPush.unregister(null).then(function (result) {
-                    console.log("unregistered push");
-                }, function (err) {
-                    console.log("failed to unregister push");
-                });
+                $cordovaPush.unregister(null);
             }
             
+            console.log(notification);
+            
             if (ionic.Platform.isIOS())
-                showAlert(notification.alert, notification.memo, notification.txnid);
+                showAlert(notification.alert, notification.memo, notification.txnId);
             else if (ionic.Platform.isAndroid())
                 switch (notification.event) {
                 case 'registered':
@@ -400,8 +404,6 @@ App.run(function ($ionicPlatform, $rootScope, $ionicNavBarDelegate, $cordovaPush
                 case 'message':
                     if (ionic.Platform.isAndroid())
                         showAlert(notification.payload.message, notification.payload.memo, notification.payload.txnid);
-                    else if (ionic.Platform.isIOS())
-                        showAlert(notification.aps.alert.title, notification.aps.alert.body, notification.aps.txnId);
                     break;
 
                 default:
